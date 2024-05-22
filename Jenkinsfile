@@ -5,10 +5,10 @@ pipeline {
         choice(name: 'TerraformAction', choices: 'Deploy\nDestroy', description: 'Select the action to perform')
     }
 
-    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_ACCESS_KEY_ID', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-    // Your AWS CLI or Terraform commands go here
-}
-
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+    }
 
     stages {
         stage('Checkout Code') {
