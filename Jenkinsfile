@@ -17,8 +17,8 @@ pipeline {
                     // Checkout Terraform code from GitHub
                     checkout([
                         $class: 'GitSCM',
-                        branches: [[name: '*/main']],
-                        userRemoteConfigs: [[url: 'https://github.com/devopscoacht/capstone/tree/master/INFRA']]
+                        branches: [[name: '*/master']],
+                        userRemoteConfigs: [[url: 'https://github.com/devopscoacht/capstone']]
                     ])
                 }
             }
