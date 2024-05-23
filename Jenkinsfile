@@ -2,69 +2,72 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'TerraformAction', choices: ['Deploy', 'Destroy'], description: 'Select the action to perform')
+        choice(name: 'TerraformAction', choices: 'Deploy\nDestroy', description: 'Select the action to perform')
     }
 
     environment {
-        // Credentials are handled securely within the withCredentials block
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                checkout scm
+                script {
+                    // Checkout Terraform code from GitHub
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: '*/master']],
+                        userRemoteConfigs: [[url: 'https://github.com/devopscoacht/capstone']]
+                    ])
+                }
             }
         }
 
         stage('Terraform Init and Plan') {
             when {
-                expression { return params.TerraformAction == 'Deploy' }
+                expression {
+                    return params.TerraformAction == 'Deploy'
+                }
             }
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws_credentials',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh """
-                        export AWS_ACCESS_KEY_ID=\${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=\${AWS_SECRET_ACCESS_KEY}
-                        terraform init
-                        terraform plan -out=tfplan
-                    """
+                script {
+                    // Conditional execution of init and plan stages only when deploying
+                    sh 'terraform init'
+                    sh 'terraform plan -out=tfplan'
                 }
             }
         }
 
         stage('Terraform Apply') {
             when {
-                expression { return params.TerraformAction == 'Deploy' }
+                expression {
+                    return params.TerraformAction == 'Deploy'
+                }
             }
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws_credentials',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh 'terraform apply -auto-approve tfplan'
+                script {
+                        sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
+                        sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
+                        // Deploy resources using Terraform
+                        sh 'terraform apply -auto-approve tfplan'
+                    
                 }
             }
         }
 
         stage('Terraform Destroy') {
             when {
-                expression { return params.TerraformAction == 'Destroy' }
+                expression {
+                    return params.TerraformAction == 'Destroy'
+                }
             }
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws_credentials',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh 'terraform destroy -auto-approve'
+                script {
+                        sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
+                        sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
+                        // Destroy resources using Terraform with the saved plan
+                        sh 'terraform destroy -auto-approve'
                 }
             }
         }
@@ -72,10 +75,22 @@ pipeline {
 
     post {
         success {
-            echo "Action '${params.TerraformAction}' succeeded."
+            script {
+                if (params.TerraformAction == 'Deploy') {
+                    echo 'Deployment succeeded'
+                } else {
+                    echo 'Destroy succeeded'
+                }
+            }
         }
         failure {
-            echo "Action '${params.TerraformAction}' failed."
+            script {
+                if (params.TerraformAction == 'Deploy') {
+                    echo 'Deployment failed'
+                } else {
+                    echo 'Destroy failed'
+                }
+            }
         }
     }
 }
