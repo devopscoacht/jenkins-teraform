@@ -27,7 +27,8 @@ pipeline {
             steps {
                 script {
                     sh 'terraform init'
-                    sh 'terraform plan -out=tfplan'
+                    // Assuming you have a terraform.tfvars file in your repository
+                    sh 'terraform plan -var-file="terraform.tfvars" -out=tfplan'
                 }
             }
         }
@@ -53,7 +54,8 @@ pipeline {
             }
             steps {
                 withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
-                    sh 'terraform destroy -auto-approve'
+                    // Ensure to specify the required variables or a tfvars file if needed
+                    sh 'terraform destroy -auto-approve -var-file="terraform.tfvars"'
                 }
             }
         }
