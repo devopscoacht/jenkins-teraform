@@ -5,16 +5,10 @@ pipeline {
         choice(name: 'TerraformAction', choices: 'Deploy\nDestroy', description: 'Select the action to perform')
     }
 
-    environment {
-        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
-        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-    }
-
     stages {
         stage('Checkout Code') {
             steps {
                 script {
-                    // Checkout Terraform code from GitHub
                     checkout([
                         $class: 'GitSCM',
                         branches: [[name: '*/master']],
@@ -32,7 +26,6 @@ pipeline {
             }
             steps {
                 script {
-                    // Conditional execution of init and plan stages only when deploying
                     sh 'terraform init'
                     sh 'terraform plan -out=tfplan'
                 }
@@ -46,12 +39,8 @@ pipeline {
                 }
             }
             steps {
-                script {
-                        sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
-                        sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
-                        // Deploy resources using Terraform
-                        sh 'terraform apply -auto-approve tfplan'
-                    
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                    sh 'terraform apply -auto-approve tfplan'
                 }
             }
         }
@@ -63,11 +52,8 @@ pipeline {
                 }
             }
             steps {
-                script {
-                        sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
-                        sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
-                        // Destroy resources using Terraform with the saved plan
-                        sh 'terraform destroy -auto-approve'
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                    sh 'terraform destroy -auto-approve'
                 }
             }
         }
