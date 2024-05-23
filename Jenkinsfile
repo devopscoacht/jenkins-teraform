@@ -18,7 +18,7 @@ pipeline {
                     checkout([
                         $class: 'GitSCM',
                         branches: [[name: '*/master']],
-                        userRemoteConfigs: [[url: 'https://github.com/devopscoacht/capstone']]
+                        userRemoteConfigs: [[url: 'https://github.com/devopscoacht/capstone.git']]
                     ])
                 }
             }
