@@ -1,4 +1,6 @@
 pipeline {
+    agent any // This line specifies that the build can run on any available agent
+
     parameters {
         choice(
             name: 'TerraformAction',
