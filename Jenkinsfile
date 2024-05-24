@@ -1,8 +1,10 @@
 pipeline {
-    agent any
-
     parameters {
-        choice(name: 'TerraformAction', choices: 'Deploy\nDestroy', description: 'Select the action to perform')
+        choice(
+            name: 'TerraformAction',
+            choices: 'Deploy\nDestroy',
+            description: 'Select the action to perform'
+        )
     }
 
     stages {
@@ -27,7 +29,6 @@ pipeline {
             steps {
                 script {
                     sh 'terraform init'
-                    // Assuming you have a terraform.tfvars file in your repository
                     sh 'terraform plan -var-file="terraform.tfvars" -out=tfplan'
                 }
             }
@@ -54,7 +55,6 @@ pipeline {
             }
             steps {
                 withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
-                    // Ensure to specify the required variables or a tfvars file if needed
                     sh 'terraform destroy -auto-approve -var-file="terraform.tfvars"'
                 }
             }
