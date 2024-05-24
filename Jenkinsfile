@@ -30,8 +30,10 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'terraform init'
-                    sh 'terraform plan -var-file="terraform.tfvars" -out=tfplan'
+                    retry(count: 3, conditions: [agent]) {
+                        sh 'terraform init'
+                        sh 'terraform plan -var-file="terraform.tfvars" -out=tfplan'
+                    }
                 }
             }
         }
